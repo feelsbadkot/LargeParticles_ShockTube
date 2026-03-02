@@ -10,8 +10,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define N   100
-#define N_D 101
+#define N   550
+#define N_D 551
 #define M    10
 #define M_D  11
 
@@ -50,7 +50,7 @@ int main() {
   	RVU = dmatrix(0, N_D, 0, M_D);
   	REU = dmatrix(0, N_D, 0, M_D);
   	RV = dmatrix(0, N_D, 0, M_D);
-  	RUV = dmatrix(0,N_D,0,M_D);
+  	RUV = dmatrix(0, N_D, 0, M_D);
   	RVV = dmatrix(0, N_D, 0, M_D);
   	REV = dmatrix(0, N_D, 0, M_D);
   	RM = dmatrix(0, N_D, 0, M_D);
@@ -66,8 +66,12 @@ int main() {
   	fprintf(F01,"Mercury02, go,go,go!!!\n");
 
     // Константы.
-  	R0 = 1; A0 = 340; RO0 = 1.204;
-  	DT = 4E-6 * A0 / R0; DX = 0.01 / R0; DR = 0.01 / R0;
+  	R0 = 1; 
+	A0 = 340; 
+	RO0 = 1.204;
+  	DT = 4E-6 * A0 / R0; 
+	DX = 0.01 / R0; 
+	DR = 0.01 / R0;
   	K = 1.4;
 
     // Начальные условия.
@@ -180,42 +184,42 @@ int main() {
 		}
 
         // ЕE.ГУ: правая граница.
-    	for (J = 1; J <= M; J++) EE[N+1][J] = EE[N][J];
+    	for (J = 1; J <= M; J++) { EE[N+1][J] = EE[N][J]; }
 
         // ЕE.ГУ: нижняя граница - ось симметрии.
-    	for (I = 1; I <= N; I++) EE[I][0] = EE[I][1];
+    	for (I = 1; I <= N; I++) { EE[I][0] = EE[I][1]; }
 
         // ЕЕ.ГУ: левая граница.
-    	for (J = 1; J <= M; J++) EE[0][J] = EE[1][J];
+    	for (J = 1; J <= M; J++) { EE[0][J] = EE[1][J]; }
 
 	    // ЕЕ.ГУ: верхняя граница.
-    	for (I = 1; I <= N; I++) EE[I][M+1] = EE[I][M];
+    	for (I = 1; I <= N; I++) { EE[I][M+1] = EE[I][M]; }
 
 	    // Анализ устойчивости вычислений.
 		for (I = 1; I <= N; I++) {
 			for (J = 1; J <= M; J++) {
 				if (P[I][J] < 0) {
-					printf("Attention!!! P[I][J]= %e %d %d %d\n",P[I][J],I,J,NC);
-					fprintf(F01,"Attention!!! P[I][J]= %e %d %d %d\n",P[I][J],I,J,NC);
-					fprintf(F01,"     Parameter PR[I][J]=\n");
+					printf("Attention!!! P[I][J]= %e %d %d %d\n", P[I][J], I, J, NC);
+					fprintf(F01, "Attention!!! P[I][J]= %e %d %d %d\n", P[I][J], I, J, NC);
+					fprintf(F01, "     Parameter PR[I][J]=\n");
 
 					for (I = 0; I <= N + 1; I++) {
-						fprintf(F01,"%3d ",I);
-						for (J=0; J<=M+1; J++) { 
-							RM[I][J]=P[I][J]*A0*A0*RO0/1E6;
-							fprintf(F01,"%8.3f",RM[I][J]);
+						fprintf(F01, "%3d ", I);
+						for (J=0; J <= M+1; J++) { 
+							RM[I][J]=P[I][J] * A0 * A0 * RO0 / 1E6;
+							fprintf(F01, "%8.3f", RM[I][J]);
 						}
 						fprintf(F01,"\n");
 					}
 
 					fprintf(F01,"     Parameter U1R[I][J]=\n");
-					for (I=0; I <= N+1; I++) {
-						fprintf(F01,"%3d ",I);
-						for (J=0; J <= M+1; J++) { 
-							RM[I][J]=U[I][J]*A0;
-							fprintf(F01,"%8.2f",RM[I][J]);
+					for (I = 0; I <= N + 1; I++) {
+						fprintf(F01, "%3d ", I);
+						for (J = 0; J <= M+1; J++) { 
+							RM[I][J] = U[I][J] * A0;
+							fprintf(F01, "%8.2f", RM[I][J]);
 						}
-						fprintf(F01,"\n");
+						fprintf(F01, "\n");
 					
 					}
 					return 20;
