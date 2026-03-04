@@ -29,7 +29,7 @@ int main() {
            **RU, **RUU, **RVU, **REU, **RV, **RUV, **RVV, **REV, **RM,
 			A1, A2, A3, A4, A5, A6, A7, A8, A10;
   	int I, J, NC;
-  	FILE *F01;
+  	FILE *F01, *F02;
 
     // Определение указателей на переменные.
   	RO = dmatrix(0, N_D, 0, M_D);
@@ -56,30 +56,30 @@ int main() {
   	RM = dmatrix(0, N_D, 0, M_D);
 
     // Открытие файла для печати расчётной информации.
-  	if ((F01 = fopen("./OutMerc02a.txt","w")) == NULL) {
+  	if ((F01 = fopen("./OutMerc02a.txt", "w")) == NULL) {
     	printf("File F01 is not open!\n");
     	return 1;
   	}
 
 	// Сообщение о начале счёта.
   	printf("Mercury02, go,go,go!!!\n");
-  	fprintf(F01,"Mercury02, go,go,go!!!\n");
+  	fprintf(F01, "Mercury02, go,go,go!!!\n");
 
     // Константы.
   	R0 = 1; 
 	A0 = 340; 
 	RO0 = 1.204;
   	DT = 4E-6 * A0 / R0; 
-	DX = 0.01 / R0; 
-	DR = 0.01 / R0;
+	DX = 0.005 / R0; 
+	DR = 0.005 / R0;
   	K = 1.4;
 
     // Начальные условия.
   	for (I = 1; I <= N; I++) {
 		for (J = 1; J <= M; J++) {
-	  		if (I <= 20) { 
-				RO[I][J] = 20.0 * 1.204 / RO0; 
-				P[I][J] = 20.0 * 1.01325E5 / (RO0 * A0 * A0); 
+	  		if (I <= 50) { 
+				RO[I][J] = 50.0 * 1.204 / RO0; 
+				P[I][J] = 50.0 * 1.01325E5 / (RO0 * A0 * A0); 
 			} else {
 				RO[I][J] = 1.204 / RO0; 
 				P[I][J] = 1.01325E5 / (RO0 * A0 * A0); 
@@ -97,10 +97,10 @@ int main() {
   	for (NC = 1; NC < 100000; NC++) {
 		// ГУ: правая граница.
 		for (J = 1; J <= M; J++) {
-			RO[N+1][J] = RO[N][J]; 
-			U[N+1][J] = -U[N][J]; 
-			V[N+1][J] = V[N][J]; 
-			P[N+1][J] = P[N][J];
+			RO[N + 1][J] = RO[N][J]; 
+			U[N + 1][J] = -U[N][J]; 
+			V[N + 1][J] = V[N][J]; 
+			P[N + 1][J] = P[N][J];
 		}
 
     	// ГУ: нижняя граница - ось симметрии.
@@ -121,10 +121,10 @@ int main() {
 
 	    // ГУ: верхняя граница.
 		for (I = 1; I <= N; I++) {
-			RO[I][M+1] = RO[I][M]; 
-			U[I][M+1] = U[I][M]; 
-			V[I][M+1] = -V[I][M]; 
-			P[I][M+1] = P[I][M];
+			RO[I][M + 1] = RO[I][M]; 
+			U[I][M + 1] = U[I][M]; 
+			V[I][M + 1] = -V[I][M]; 
+			P[I][M + 1] = P[I][M];
 		}
 
 	    //********************************
@@ -134,19 +134,19 @@ int main() {
 	    // Вычисление "эйлеровых" скоростей.
     	for (I = 1; I <= N; I++) {
       		for (J = 1; J <= M; J++) {
-        		A1 = (P[I][J] + P[I+1][J]) / 2; 
-				A2 = (P[I-1][J] + P[I][J]) / 2;
-        		A3 = (P[I][J] + P[I][J+1]) / 2; 
-				A4 = (P[I][J-1] + P[I][J]) / 2;
+        		A1 = (P[I][J] + P[I + 1][J]) / 2; 
+				A2 = (P[I - 1][J] + P[I][J]) / 2;
+        		A3 = (P[I][J] + P[I][J + 1]) / 2; 
+				A4 = (P[I][J - 1] + P[I][J]) / 2;
         		UE[I][J] = U[I][J] - (A1 - A2) * DT / (RO[I][J] * DX);
-        		VE[I][J] = V[I][J] - (A3 - A4) *DT / (RO[I][J] * DR);
+        		VE[I][J] = V[I][J] - (A3 - A4) * DT / (RO[I][J] * DR);
       		}
     	}
 
         // Е.ГУ: правая граница.
     	for (J = 1; J <= M; J++) { 
-			UE[N+1][J] = -UE[N][J]; 
-			VE[N+1][J] = VE[N][J]; 
+			UE[N + 1][J] = -UE[N][J]; 
+			VE[N + 1][J] = VE[N][J]; 
 		}
 
         // Е.ГУ: нижняя граница - ось симметрии.
@@ -163,28 +163,28 @@ int main() {
 
 	    // Е.ГУ: верхняя граница.
 		for (I = 1; I <= N; I++) { 
-			UE[I][M+1] = UE[I][M]; 
-			VE[I][M+1] = -VE[I][M]; 
+			UE[I][M + 1] = UE[I][M]; 
+			VE[I][M + 1] = -VE[I][M]; 
 		}
 
 	    // Вычисление "эйлеровой" полной удельной энергии.	
 		for (I = 1; I <= N; I++) {
 			for (J = 1; J <= M; J++) {
-				A1 = (P[I][J] + P[I+1][J]) / 2; 
-				A2 = (P[I-1][J] + P[I][J]) / 2;
-				A3 = (P[I][J] + P[I][J+1]) / 2; 
-				A4 = (P[I][J-1] + P[I][J]) / 2;
-				A5 = (UE[I][J] + UE[I+1][J]) / 2; 
-				A6 = (UE[I-1][J] + UE[I][J]) / 2;
-				A7 = (VE[I][J] + VE[I][J+1]) / 2; 
-				A8 = (VE[I][J-1] + VE[I][J]) / 2;
+				A1 = (P[I][J] + P[I + 1][J]) / 2; 
+				A2 = (P[I - 1][J] + P[I][J]) / 2;
+				A3 = (P[I][J] + P[I][J + 1]) / 2; 
+				A4 = (P[I][J - 1] + P[I][J]) / 2;
+				A5 = (UE[I][J] + UE[I + 1][J]) / 2; 
+				A6 = (UE[I - 1][J] + UE[I][J]) / 2;
+				A7 = (VE[I][J] + VE[I][J + 1]) / 2; 
+				A8 = (VE[I][J - 1] + VE[I][J]) / 2;
 				EE[I][J] = E[I][J]- (A1 * A5 - A2 * A6) * DT / (RO[I][J] * DX) -
 						   (J * A3 * A7 - (J - 1) * A4 * A8) * DT / (RO[I][J] * (J - 0.5) * DR);
 			}
 		}
 
         // ЕE.ГУ: правая граница.
-    	for (J = 1; J <= M; J++) { EE[N+1][J] = EE[N][J]; }
+    	for (J = 1; J <= M; J++) { EE[N + 1][J] = EE[N][J]; }
 
         // ЕE.ГУ: нижняя граница - ось симметрии.
     	for (I = 1; I <= N; I++) { EE[I][0] = EE[I][1]; }
@@ -193,7 +193,7 @@ int main() {
     	for (J = 1; J <= M; J++) { EE[0][J] = EE[1][J]; }
 
 	    // ЕЕ.ГУ: верхняя граница.
-    	for (I = 1; I <= N; I++) { EE[I][M+1] = EE[I][M]; }
+    	for (I = 1; I <= N; I++) { EE[I][M + 1] = EE[I][M]; }
 
 	    // Анализ устойчивости вычислений.
 		for (I = 1; I <= N; I++) {
@@ -206,7 +206,7 @@ int main() {
 					for (I = 0; I <= N + 1; I++) {
 						fprintf(F01, "%3d ", I);
 						for (J=0; J <= M+1; J++) { 
-							RM[I][J]=P[I][J] * A0 * A0 * RO0 / 1E6;
+							RM[I][J] = P[I][J] * A0 * A0 * RO0 / 1E6;
 							fprintf(F01, "%8.3f", RM[I][J]);
 						}
 						fprintf(F01,"\n");
@@ -233,32 +233,32 @@ int main() {
 		for (I = 0; I <= N; I++) {
 			for (J = 0; J <= M; J++) {
 				// Вдоль оси "0Х".
-				A1 = (UE[I][J] + UE[I+1][J]) / 2;
+				A1 = (UE[I][J] + UE[I + 1][J]) / 2;
 				if (A1 >= 0) {
 					RU[I][J] = RO[I][J] * A1;
 					RUU[I][J] = RU[I][J] * UE[I][J];
 					RVU[I][J] = RU[I][J] * VE[I][J];
 					REU[I][J] = RU[I][J] * EE[I][J];
 				} else {
-					RU[I][J] = RO[I+1][J] * A1;
-					RUU[I][J] = RU[I][J] * UE[I+1][J];
-					RVU[I][J] = RU[I][J] * VE[I+1][J];
-					REU[I][J] = RU[I][J] * EE[I+1][J];
+					RU[I][J] = RO[I + 1][J] * A1;
+					RUU[I][J] = RU[I][J] * UE[I + 1][J];
+					RVU[I][J] = RU[I][J] * VE[I + 1][J];
+					REU[I][J] = RU[I][J] * EE[I + 1][J];
 				}
 
 				// Вдоль оси "0R".
-				A1 = (VE[I][J] + VE[I][J+1]) / 2;
+				A1 = (VE[I][J] + VE[I][J + 1]) / 2;
 				if (A1 >= 0) {
 					RV[I][J] = RO[I][J] * A1;
 					RUV[I][J] = RV[I][J] * UE[I][J];
 					RVV[I][J] = RV[I][J] * VE[I][J];
 					REV[I][J] = RV[I][J] * EE[I][J];
 				} else {
-					RV[I][J] = RO[I][J+1] * A1;
-					RUV[I][J] = RV[I][J] * UE[I][J+1];
-					RVV[I][J] = RV[I][J] * VE[I][J+1];
-					REV[I][J] = RV[I][J] * EE[I][J+1];
-				}
+					RV[I][J] = RO[I][J + 1] * A1;
+					RUV[I][J] = RV[I][J] * UE[I][J + 1];
+					RVV[I][J] = RV[I][J] * VE[I][J + 1];
+					REV[I][J] = RV[I][J] * EE[I][J + 1];
+			    }
 			}
 		}
 
@@ -267,25 +267,26 @@ int main() {
 		//***************************************
 		for (I = 1; I <= N; I++) {
 			for (J = 1; J <= M; J++) {
-				RO1[I][J] = RO[I][J] - (RU[I][J] - RU[I-1][J]) * DT / DX-
-							(J * RV[I][J] - (J - 1) * RV[I][J-1]) * DT / ((J - 0.5) * DR);
+				RO1[I][J] = RO[I][J] - (RU[I][J] - RU[I - 1][J]) * DT / DX -
+							(J * RV[I][J] - (J - 1) * RV[I][J - 1]) * DT / ((J - 0.5) * DR);
 				A1 = DT / RO1[I][J];
-				U[I][J] = RO[I][J] * UE[I][J] / RO1[I][J]-
-						  (RUU[I][J] - RUU[I-1][J]) * A1 / DX -
-						  (J * RUV[I][J] - (J - 1) * RUV[I][J-1]) * A1 / ((J - 0.5) * DR);
-				V[I][J] = RO[I][J] * VE[I][J] / RO1[I][J]-
-						  (RVU[I][J] - RVU[I-1][J]) * A1 / DX -
-						  (J * RVV[I][J] - (J - 1) * RVV[I][J-1]) * A1 / ((J - 0.5) * DR);
-				E[I][J] = RO[I][J] * EE[I][J] / RO1[I][J]-
-						  (REU[I][J] - REU[I-1][J]) * A1 / DX - 
-						  (J * REV[I][J] - (J - 1) * REV[I][J-1]) * A1 / ((J - 0.5) * DR);
+				U[I][J] = RO[I][J] * UE[I][J] / RO1[I][J] -
+						  (RUU[I][J] - RUU[I - 1][J]) * A1 / DX -
+						  (J * RUV[I][J] - (J - 1) * RUV[I][J - 1]) * A1 / ((J - 0.5) * DR);
+				V[I][J] = RO[I][J] * VE[I][J] / RO1[I][J] -
+						  (RVU[I][J] - RVU[I - 1][J]) * A1 / DX -
+						  (J * RVV[I][J] - (J - 1) * RVV[I][J - 1]) * A1 / ((J - 0.5) * DR);
+				E[I][J] = RO[I][J] * EE[I][J] / RO1[I][J] -
+						  (REU[I][J] - REU[I - 1][J]) * A1 / DX - 
+						  (J * REV[I][J] - (J - 1) * REV[I][J - 1]) * A1 / ((J - 0.5) * DR);
 			}
 		}
 
 		// Дополнительные параметры
 		for (I = 1; I <= N; I++) {
-			for (J=1; J<=M; J++) { 
-				P[I][J] = (K - 1) * RO1[I][J] * (E[I][J] - (U[I][J] * U[I][J] + V[I][J] * V[I][J]) / 2);
+			for (J = 1; J <= M; J++) { 
+				P[I][J] = (K - 1) * RO1[I][J] * (E[I][J] - (U[I][J] * U[I][J] + 
+															V[I][J] * V[I][J]) / 2);
 			}
 		}
 		
@@ -310,7 +311,7 @@ int main() {
 			fprintf(F01,"%5d %8.3f %8.3f %8.3f %8.3f %8.3f %8.2f\n",
 					NC, A1, A2, A3, A4, A5, A6);
 		}
-
+    	
 		// Печать параметров по полному полю течения.
 		if (!(NC % 100)) {
 			fprintf(F01, "Parameters of stream %d\n", NC);
@@ -333,10 +334,63 @@ int main() {
 				fprintf(F01, "\n");
 			}
 		} 
+
+		// Печать в VTK файлы
+		char vtk_filename[100];
+		snprintf(vtk_filename, sizeof(vtk_filename), "./results/out_%d.vtk", NC);
+		if ((F02 = fopen(vtk_filename, "w")) == NULL) {
+    		printf("File %s is not open!\n", vtk_filename);
+    		return 1;
+  		}
+		fprintf(F02, "# vtk DataFile Version 2.0\n");
+		fprintf(F02, "2d davd\n");
+		fprintf(F02, "ASCII\n");
+		fprintf(F02, "DATASET STRUCTURED_POINTS\n");
+		fprintf(F02, "DIMENSIONS %d %d 1\n", N, M);
+		fprintf(F02, "ASPECT_RATIO %4.3f %4.3f 1\n", DX, DR);
+		fprintf(F02, "ORIGIN 0 0 0\n");
+		fprintf(F02, "POINT_DATA %d\n", N * M);
+
+		fprintf(F02, "SCALARS Density double 1\n");
+		fprintf(F02, "LOOKUP_TABLE default\n");
+		for (int I = 1; I <= N; I++) {
+            for (int J = 1; J <= M; J++) {
+                fprintf(F02, "%f ", RO[I][J]);
+			}
+			fprintf(F02, "\n");
+        }
+
+		fprintf(F02, "SCALARS Pressure double 1\n");
+		fprintf(F02, "LOOKUP_TABLE default\n");
+		for (int I = 1; I <= N; I++) {
+            for (int J = 1; J <= M; J++) {
+                fprintf(F02, "%f ", P[I][J]);
+			}
+			fprintf(F02, "\n");
+        }
+
+		fprintf(F02, "SCALARS Energy double 1\n");
+		fprintf(F02, "LOOKUP_TABLE default\n");
+		for (int I = 1; I <= N; I++) {
+            for (int J = 1; J <= M; J++) {
+                fprintf(F02, "%f ", E[I][J]);
+			}
+			fprintf(F02, "\n");
+        }
+
+		fprintf(F02, "VECTORS Velocity double\n");
+		for (int I = 1; I <= N; I++) {
+            for (int J = 1; J <= M; J++) {
+                fprintf(F02, "%f %f 0.0\n", U[I][J], V[I][J]);
+			}
+        }
+
+		fclose(F02);
+
 		if (NC == 1000)  {
 			fclose(F01);
 			printf("The END. Good time!\n");
-			return 1000;
+			break;
 		}
   	}  // Конец цикла по времени!
 
