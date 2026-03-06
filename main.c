@@ -10,8 +10,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define N   550
-#define N_D 551
+#define N   250
+#define N_D 251
 #define M    10
 #define M_D  11
 
@@ -22,11 +22,11 @@ int main();
 
 int main() {
 	// Описание используемых переменных.
-  	double R0, A0, RO0, DT, DX, DR, K, 
-		   **RO, **U, **V, **P, **E, **RO1,
+  	double R0, A0, RO0, DT, DX, DR, K0, T0,
+		   **RO, **U, **V, **P, **E, **RO1, **T, **Cp, **K,
 		   **ROP, **ROB, **UP, **VB,
            **UE, **VE, **EE,
-           **RU, **RUU, **RVU, **REU, **RV, **RUV, **RVV, **REV, **RM,
+           **RU, **RUU, **RVU, **REU, **RV, **RUV, **RVV, **REV, **RM, **RCpU, **RCpV, **RKU, **RKV,
 			A1, A2, A3, A4, A5, A6, A7, A8, A10;
   	int I, J, NC;
   	FILE *F01, *F02;
@@ -37,6 +37,9 @@ int main() {
   	V = dmatrix(0, N_D, 0, M_D);
   	P = dmatrix(0, N_D, 0, M_D);
   	E = dmatrix(0, N_D, 0, M_D);
+	T = dmatrix(0, N_D, 0, M_D);
+	Cp = dmatrix(0, N_D, 0, M_D);
+	K = dmatrix(0, N_D, 0, M_D);
   	RO1 = dmatrix(0, N_D, 0, M_D);
   	ROP = dmatrix(0, N_D, 1, M_D);
   	ROB = dmatrix(1, N_D, 0, M_D);
@@ -53,6 +56,10 @@ int main() {
   	RUV = dmatrix(0, N_D, 0, M_D);
   	RVV = dmatrix(0, N_D, 0, M_D);
   	REV = dmatrix(0, N_D, 0, M_D);
+	RCpU = dmatrix(0, N_D, 0, M_D);
+	RCpV = dmatrix(0, N_D, 0, M_D);
+	RKU = dmatrix(0, N_D, 0, M_D);
+	RKV = dmatrix(0, N_D, 0, M_D);
   	RM = dmatrix(0, N_D, 0, M_D);
 
     // Открытие файла для печати расчётной информации.
@@ -68,11 +75,12 @@ int main() {
     // Константы.
   	R0 = 1; 
 	A0 = 340; 
+	T0 = 273;
 	RO0 = 1.204;
-  	DT = 4E-6 * A0 / R0; 
+	DT = 4e-6 * A0 / R0; ;
 	DX = 0.005 / R0; 
 	DR = 0.005 / R0;
-  	K = 1.4;
+  	K0 = 1.4;
 
     // Начальные условия.
   	for (I = 1; I <= N; I++) {
@@ -80,15 +88,22 @@ int main() {
 	  		if (I <= 50) { 
 				RO[I][J] = 50.0 * 1.204 / RO0; 
 				P[I][J] = 50.0 * 1.01325E5 / (RO0 * A0 * A0); 
+				T[I][J] = 500 / T0;
+				K[I][J] = 1.2;
 			} else {
 				RO[I][J] = 1.204 / RO0; 
 				P[I][J] = 1.01325E5 / (RO0 * A0 * A0); 
+				T[I][J] = 300 / T0;
+				K[I][J] = 1.4;
 			}
 	  		U[I][J] = 0.0; 
 			V[I][J] = 0.0;
-	  		E[I][J] = P[I][J] / (RO[I][J] * (K - 1));
+	  		E[I][J] = P[I][J] / (RO[I][J] * (K[I][J] - 1));
+			Cp[I][J] = K[I][J] * P[I][J] / ((K[I][J] - 1) * RO[I][J] * T[I][J]);
 		}
   	}
+
+	// DT = DX / (8 * sqrt((K0 - 1) * E[I][J])) * A0 / R0; 
 
     //***************************************
     //*          Цикл по времени.           *
@@ -101,6 +116,8 @@ int main() {
 			U[N + 1][J] = -U[N][J]; 
 			V[N + 1][J] = V[N][J]; 
 			P[N + 1][J] = P[N][J];
+			Cp[N + 1][J] = Cp[N][J];
+			K[N + 1][J] = K[N][J];
 		}
 
     	// ГУ: нижняя граница - ось симметрии.
@@ -109,6 +126,8 @@ int main() {
 			U[I][0] = U[I][1]; 
 			V[I][0] = -V[I][1]; 
 			P[I][0] = P[I][1]; 
+			Cp[I][0] = Cp[I][1]; 
+			K[I][0] = K[I][1]; 
 		}
 
         // ГУ: левая граница.
@@ -117,6 +136,8 @@ int main() {
 			U[0][J] = -U[1][J]; 
 			V[0][J] = V[1][J];
 			P[0][J] = P[1][J]; 
+			Cp[0][J] = Cp[1][J]; 
+			K[0][J] = K[1][J]; 
 		}
 
 	    // ГУ: верхняя граница.
@@ -125,6 +146,8 @@ int main() {
 			U[I][M + 1] = U[I][M]; 
 			V[I][M + 1] = -V[I][M]; 
 			P[I][M + 1] = P[I][M];
+			Cp[I][M + 1] = Cp[I][M];
+			K[I][M + 1] = K[I][M];
 		}
 
 	    //********************************
@@ -215,7 +238,7 @@ int main() {
 					fprintf(F01,"     Parameter U1R[I][J]=\n");
 					for (I = 0; I <= N + 1; I++) {
 						fprintf(F01, "%3d ", I);
-						for (J = 0; J <= M+1; J++) { 
+						for (J = 0; J <= M + 1; J++) { 
 							RM[I][J] = U[I][J] * A0;
 							fprintf(F01, "%8.2f", RM[I][J]);
 						}
@@ -239,11 +262,15 @@ int main() {
 					RUU[I][J] = RU[I][J] * UE[I][J];
 					RVU[I][J] = RU[I][J] * VE[I][J];
 					REU[I][J] = RU[I][J] * EE[I][J];
+					RCpU[I][J] = RU[I][J] * Cp[I][J];
+					RKU[I][J] = RU[I][J] * K[I][J];
 				} else {
 					RU[I][J] = RO[I + 1][J] * A1;
 					RUU[I][J] = RU[I][J] * UE[I + 1][J];
 					RVU[I][J] = RU[I][J] * VE[I + 1][J];
 					REU[I][J] = RU[I][J] * EE[I + 1][J];
+					RCpU[I][J] = RU[I][J] * Cp[I + 1][J];
+					RKU[I][J] = RU[I][J] * K[I + 1][J];
 				}
 
 				// Вдоль оси "0R".
@@ -253,11 +280,15 @@ int main() {
 					RUV[I][J] = RV[I][J] * UE[I][J];
 					RVV[I][J] = RV[I][J] * VE[I][J];
 					REV[I][J] = RV[I][J] * EE[I][J];
+					RCpV[I][J] = RV[I][J] * Cp[I][J];
+					RKV[I][J] = RV[I][J] * K[I][J];
 				} else {
 					RV[I][J] = RO[I][J + 1] * A1;
 					RUV[I][J] = RV[I][J] * UE[I][J + 1];
 					RVV[I][J] = RV[I][J] * VE[I][J + 1];
 					REV[I][J] = RV[I][J] * EE[I][J + 1];
+					RCpV[I][J] = RV[I][J] * Cp[I][J + 1];
+					RKV[I][J] = RV[I][J] * K[I][J + 1];
 			    }
 			}
 		}
@@ -279,14 +310,22 @@ int main() {
 				E[I][J] = RO[I][J] * EE[I][J] / RO1[I][J] -
 						  (REU[I][J] - REU[I - 1][J]) * A1 / DX - 
 						  (J * REV[I][J] - (J - 1) * REV[I][J - 1]) * A1 / ((J - 0.5) * DR);
+				Cp[I][J] = Cp[I][J] * (RO[I][J] / RO1[I][J]) - 
+						  (RCpU[I][J] - RCpU[I - 1][J]) * A1 / DX -
+						  (J * RCpV[I][J] - (J - 1) * RCpV[I][J - 1]) * A1 / ((J - 0.5) * DR);
+				K[I][J] = K[I][J] * (RO[I][J] / RO1[I][J]) - 
+						  (RKU[I][J] - RKU[I - 1][J]) * A1 / DX -
+						  (J * RKV[I][J] - (J - 1) * RKV[I][J - 1]) * A1 / ((J - 0.5) * DR);
 			}
 		}
 
 		// Дополнительные параметры
 		for (I = 1; I <= N; I++) {
 			for (J = 1; J <= M; J++) { 
-				P[I][J] = (K - 1) * RO1[I][J] * (E[I][J] - (U[I][J] * U[I][J] + 
-															V[I][J] * V[I][J]) / 2);
+				P[I][J] = (K[I][J] - 1) * RO1[I][J] * (E[I][J] - (U[I][J] * U[I][J] + 
+															      V[I][J] * V[I][J]) / 2);
+				T[I][J] = K[I][J] * (E[I][J] - (U[I][J] * U[I][J] + 
+					                            V[I][J] * V[I][J]) / 2) / Cp[I][J];
 			}
 		}
 		
@@ -336,58 +375,88 @@ int main() {
 		} 
 
 		// Печать в VTK файлы
-		char vtk_filename[100];
-		snprintf(vtk_filename, sizeof(vtk_filename), "./results/out_%d.vtk", NC);
-		if ((F02 = fopen(vtk_filename, "w")) == NULL) {
-    		printf("File %s is not open!\n", vtk_filename);
-    		return 1;
-  		}
-		fprintf(F02, "# vtk DataFile Version 2.0\n");
-		fprintf(F02, "2d davd\n");
-		fprintf(F02, "ASCII\n");
-		fprintf(F02, "DATASET STRUCTURED_POINTS\n");
-		fprintf(F02, "DIMENSIONS %d %d 1\n", N, M);
-		fprintf(F02, "ASPECT_RATIO %4.3f %4.3f 1\n", DX, DR);
-		fprintf(F02, "ORIGIN 0 0 0\n");
-		fprintf(F02, "POINT_DATA %d\n", N * M);
-
-		fprintf(F02, "SCALARS Density double 1\n");
-		fprintf(F02, "LOOKUP_TABLE default\n");
-		for (int I = 1; I <= N; I++) {
-            for (int J = 1; J <= M; J++) {
-                fprintf(F02, "%f ", RO[I][J]);
+		if (!(NC % 100)) {
+			char vtk_filename[100];
+			snprintf(vtk_filename, sizeof(vtk_filename), "./results/out_%d.vtk", NC);
+			if ((F02 = fopen(vtk_filename, "w")) == NULL) {
+				printf("File %s is not open!\n", vtk_filename);
+				return 1;
 			}
-			fprintf(F02, "\n");
-        }
 
-		fprintf(F02, "SCALARS Pressure double 1\n");
-		fprintf(F02, "LOOKUP_TABLE default\n");
-		for (int I = 1; I <= N; I++) {
-            for (int J = 1; J <= M; J++) {
-                fprintf(F02, "%f ", P[I][J]);
+			fprintf(F02, "# vtk DataFile Version 2.0\n");
+			fprintf(F02, "2d davd\n");
+			fprintf(F02, "ASCII\n");
+			fprintf(F02, "DATASET STRUCTURED_POINTS\n");
+			fprintf(F02, "DIMENSIONS %d %d 1\n", M, N);
+			fprintf(F02, "ASPECT_RATIO %4.3f %4.3f 1\n", DX, DR);
+			fprintf(F02, "ORIGIN 0 0 0\n");
+			fprintf(F02, "POINT_DATA %d\n", N * M);
+
+			fprintf(F02, "SCALARS Density double 1\n");
+			fprintf(F02, "LOOKUP_TABLE default\n");
+			for (int I = 1; I <= N; I++) {
+				for (int J = 1; J <= M; J++) {
+					fprintf(F02, "%f ", RO[I][J]);
+				}
+				fprintf(F02, "\n");
 			}
-			fprintf(F02, "\n");
-        }
 
-		fprintf(F02, "SCALARS Energy double 1\n");
-		fprintf(F02, "LOOKUP_TABLE default\n");
-		for (int I = 1; I <= N; I++) {
-            for (int J = 1; J <= M; J++) {
-                fprintf(F02, "%f ", E[I][J]);
+			fprintf(F02, "SCALARS Pressure double 1\n");
+			fprintf(F02, "LOOKUP_TABLE default\n");
+			for (int I = 1; I <= N; I++) {
+				for (int J = 1; J <= M; J++) {
+					fprintf(F02, "%f ", P[I][J]);
+				}
+				fprintf(F02, "\n");
 			}
-			fprintf(F02, "\n");
-        }
 
-		fprintf(F02, "VECTORS Velocity double\n");
-		for (int I = 1; I <= N; I++) {
-            for (int J = 1; J <= M; J++) {
-                fprintf(F02, "%f %f 0.0\n", U[I][J], V[I][J]);
+			fprintf(F02, "SCALARS Energy double 1\n");
+			fprintf(F02, "LOOKUP_TABLE default\n");
+			for (int I = 1; I <= N; I++) {
+				for (int J = 1; J <= M; J++) {
+					fprintf(F02, "%f ", E[I][J]);
+				}
+				fprintf(F02, "\n");
 			}
-        }
 
-		fclose(F02);
+			fprintf(F02, "SCALARS Constant_pressure_heat_capacity double 1\n");
+			fprintf(F02, "LOOKUP_TABLE default\n");
+			for (int I = 1; I <= N; I++) {
+				for (int J = 1; J <= M; J++) {
+					fprintf(F02, "%f ", Cp[I][J]);
+				}
+				fprintf(F02, "\n");
+			}
 
-		if (NC == 1000)  {
+			fprintf(F02, "SCALARS Adiabatic_index double 1\n");
+			fprintf(F02, "LOOKUP_TABLE default\n");
+			for (int I = 1; I <= N; I++) {
+				for (int J = 1; J <= M; J++) {
+					fprintf(F02, "%f ", K[I][J]);
+				}
+				fprintf(F02, "\n");
+			}
+
+			fprintf(F02, "SCALARS Temperature double 1\n");
+			fprintf(F02, "LOOKUP_TABLE default\n");
+			for (int I = 1; I <= N; I++) {
+				for (int J = 1; J <= M; J++) {
+					fprintf(F02, "%f ", T[I][J]);
+				}
+				fprintf(F02, "\n");
+			}
+
+			fprintf(F02, "VECTORS Velocity double\n");
+			for (int I = 1; I <= N; I++) {
+				for (int J = 1; J <= M; J++) {
+					fprintf(F02, "%f %f 0.0\n", V[I][J], U[I][J]);
+				}
+			}
+
+			fclose(F02);
+		}
+
+		if (NC == 10000)  {
 			fclose(F01);
 			printf("The END. Good time!\n");
 			break;
@@ -400,6 +469,8 @@ int main() {
   	free_dmatrix(V, 0, N_D, 0, M_D);
   	free_dmatrix(P, 0, N_D, 0, M_D);
   	free_dmatrix(E, 0, N_D, 0, M_D);
+	free_dmatrix(Cp, 0, N_D, 0, M_D);
+	free_dmatrix(K, 0, N_D, 0, M_D);
   	free_dmatrix(RO1, 0, N_D, 0, M_D);
   	free_dmatrix(ROP, 0, N_D, 1, M_D);
   	free_dmatrix(ROB, 1, N_D, 0, M_D);
@@ -416,6 +487,10 @@ int main() {
   	free_dmatrix(RUV, 0, N_D, 0, M_D);
   	free_dmatrix(RVV, 0, N_D, 0, M_D);
   	free_dmatrix(REV, 0, N_D, 0, M_D);
+	free_dmatrix(RCpU, 0, N_D, 0, M_D);
+	free_dmatrix(RCpV, 0, N_D, 0, M_D);
+	free_dmatrix(RKU, 0, N_D, 0, M_D);
+	free_dmatrix(RKV, 0, N_D, 0, M_D);
 
   	return 0;
 } // Конец Mercury02 !!!
