@@ -24,7 +24,6 @@ int main() {
 	// Описание используемых переменных.
   	double R0, A0, RO0, DT, DX, DR, K0, T0,
 		   **RO, **U, **V, **P, **E, **RO1, **T, **Cp, **K,
-		   **ROP, **ROB, **UP, **VB,
            **UE, **VE, **EE,
            **RU, **RUU, **RVU, **REU, **RV, **RUV, **RVV, **REV, **RM, **RCpU, **RCpV, **RKU, **RKV,
 			A1, A2, A3, A4, A5, A6, A7, A8, A10;
@@ -41,10 +40,6 @@ int main() {
 	Cp = dmatrix(0, N_D, 0, M_D);
 	K = dmatrix(0, N_D, 0, M_D);
   	RO1 = dmatrix(0, N_D, 0, M_D);
-  	ROP = dmatrix(0, N_D, 1, M_D);
-  	ROB = dmatrix(1, N_D, 0, M_D);
-  	UP = dmatrix(0, N_D, 1, M_D);
-  	VB = dmatrix(1, N_D, 0, M_D);
   	UE = dmatrix(0, N_D, 0, M_D);
   	VE = dmatrix(0, N_D, 0, M_D);
   	EE = dmatrix(0, N_D, 0, M_D);
@@ -77,7 +72,7 @@ int main() {
 	A0 = 340; 
 	T0 = 273;
 	RO0 = 1.204;
-	DT = 4e-6 * A0 / R0; ;
+	DT = 4e-6 * A0 / R0; 
 	DX = 0.005 / R0; 
 	DR = 0.005 / R0;
   	K0 = 1.4;
@@ -91,8 +86,8 @@ int main() {
 				T[I][J] = 500 / T0;
 				K[I][J] = 1.2;
 			} else {
-				RO[I][J] = 1.204 / RO0; 
-				P[I][J] = 1.01325E5 / (RO0 * A0 * A0); 
+				RO[I][J] = 2 * 1.204 / RO0; 
+				P[I][J] = 2 * 1.01325E5 / (RO0 * A0 * A0); 
 				T[I][J] = 300 / T0;
 				K[I][J] = 1.4;
 			}
@@ -323,9 +318,15 @@ int main() {
 		for (I = 1; I <= N; I++) {
 			for (J = 1; J <= M; J++) { 
 				P[I][J] = (K[I][J] - 1) * RO1[I][J] * (E[I][J] - (U[I][J] * U[I][J] + 
-															      V[I][J] * V[I][J]) / 2);
-				T[I][J] = K[I][J] * (E[I][J] - (U[I][J] * U[I][J] + 
-					                            V[I][J] * V[I][J]) / 2) / Cp[I][J];
+					                            				  V[I][J] * V[I][J] + 
+																  RO[I][J] / RO1[I][J] * 
+																  ((U[I][J] - UE[I][J]) * (U[I][J] - UE[I][J]) + 
+																  (V[I][J] - VE[I][J]) * (V[I][J] - VE[I][J]))) / 2) ;
+				T[I][J] = K[I][J] * RO1[I][J] * (E[I][J] - (U[I][J] * U[I][J] + 
+					                            			V[I][J] * V[I][J] + 
+															RO[I][J] / RO1[I][J] * 
+															((U[I][J] - UE[I][J]) * (U[I][J] - UE[I][J]) + 
+															(V[I][J] - VE[I][J]) * (V[I][J] - VE[I][J]))) / 2) / Cp[I][J];
 			}
 		}
 		
@@ -394,8 +395,8 @@ int main() {
 
 			fprintf(F02, "SCALARS Density double 1\n");
 			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (int I = 1; I <= N; I++) {
-				for (int J = 1; J <= M; J++) {
+			for (I = 1; I <= N; I++) {
+				for (J = 1; J <= M; J++) {
 					fprintf(F02, "%f ", RO[I][J]);
 				}
 				fprintf(F02, "\n");
@@ -403,8 +404,8 @@ int main() {
 
 			fprintf(F02, "SCALARS Pressure double 1\n");
 			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (int I = 1; I <= N; I++) {
-				for (int J = 1; J <= M; J++) {
+			for (I = 1; I <= N; I++) {
+				for (J = 1; J <= M; J++) {
 					fprintf(F02, "%f ", P[I][J]);
 				}
 				fprintf(F02, "\n");
@@ -412,8 +413,8 @@ int main() {
 
 			fprintf(F02, "SCALARS Energy double 1\n");
 			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (int I = 1; I <= N; I++) {
-				for (int J = 1; J <= M; J++) {
+			for (I = 1; I <= N; I++) {
+				for (J = 1; J <= M; J++) {
 					fprintf(F02, "%f ", E[I][J]);
 				}
 				fprintf(F02, "\n");
@@ -421,8 +422,8 @@ int main() {
 
 			fprintf(F02, "SCALARS Constant_pressure_heat_capacity double 1\n");
 			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (int I = 1; I <= N; I++) {
-				for (int J = 1; J <= M; J++) {
+			for (I = 1; I <= N; I++) {
+				for (J = 1; J <= M; J++) {
 					fprintf(F02, "%f ", Cp[I][J]);
 				}
 				fprintf(F02, "\n");
@@ -430,8 +431,8 @@ int main() {
 
 			fprintf(F02, "SCALARS Adiabatic_index double 1\n");
 			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (int I = 1; I <= N; I++) {
-				for (int J = 1; J <= M; J++) {
+			for (I = 1; I <= N; I++) {
+				for (J = 1; J <= M; J++) {
 					fprintf(F02, "%f ", K[I][J]);
 				}
 				fprintf(F02, "\n");
@@ -439,16 +440,16 @@ int main() {
 
 			fprintf(F02, "SCALARS Temperature double 1\n");
 			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (int I = 1; I <= N; I++) {
-				for (int J = 1; J <= M; J++) {
+			for (I = 1; I <= N; I++) {
+				for (J = 1; J <= M; J++) {
 					fprintf(F02, "%f ", T[I][J]);
 				}
 				fprintf(F02, "\n");
 			}
 
 			fprintf(F02, "VECTORS Velocity double\n");
-			for (int I = 1; I <= N; I++) {
-				for (int J = 1; J <= M; J++) {
+			for (I = 1; I <= N; I++) {
+				for (J = 1; J <= M; J++) {
 					fprintf(F02, "%f %f 0.0\n", V[I][J], U[I][J]);
 				}
 			}
@@ -472,10 +473,6 @@ int main() {
 	free_dmatrix(Cp, 0, N_D, 0, M_D);
 	free_dmatrix(K, 0, N_D, 0, M_D);
   	free_dmatrix(RO1, 0, N_D, 0, M_D);
-  	free_dmatrix(ROP, 0, N_D, 1, M_D);
-  	free_dmatrix(ROB, 1, N_D, 0, M_D);
-  	free_dmatrix(UP, 0, N_D, 1, M_D);
-  	free_dmatrix(VB, 1, N_D, 0, M_D);
   	free_dmatrix(UE, 0, N_D, 0, M_D);
   	free_dmatrix(VE, 0, N_D, 0, M_D);
   	free_dmatrix(EE, 0, N_D, 0, M_D);
