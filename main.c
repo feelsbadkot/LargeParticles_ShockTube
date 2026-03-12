@@ -10,8 +10,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define N   250
-#define N_D 251
+#define N   550
+#define N_D 551
 #define M    10
 #define M_D  11
 
@@ -99,6 +99,83 @@ int main() {
   	}
 
 	// DT = DX / (8 * sqrt((K0 - 1) * E[I][J])) * A0 / R0; 
+	char vtk_filename[] = "/home/feelsbadkot/Desktop/results/out_0.vtk";
+	if ((F02 = fopen(vtk_filename, "w")) == NULL) {
+		printf("File %s is not open!\n", vtk_filename);
+		return 1;
+	}
+
+	fprintf(F02, "# vtk DataFile Version 2.0\n");
+	fprintf(F02, "2d davd\n");
+	fprintf(F02, "ASCII\n");
+	fprintf(F02, "DATASET STRUCTURED_POINTS\n");
+	fprintf(F02, "DIMENSIONS %d %d 1\n", M, N);
+	fprintf(F02, "ASPECT_RATIO %4.3f %4.3f 1\n", DX, DR);
+	fprintf(F02, "ORIGIN 0 0 0\n");
+	fprintf(F02, "POINT_DATA %d\n", N * M);
+
+	fprintf(F02, "SCALARS Density double 1\n");
+	fprintf(F02, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F02, "%f ", RO[I][J]);
+		}
+		fprintf(F02, "\n");
+	}
+
+	fprintf(F02, "SCALARS Pressure double 1\n");
+	fprintf(F02, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F02, "%f ", P[I][J]);
+		}
+		fprintf(F02, "\n");
+	}
+	
+	fprintf(F02, "SCALARS Energy double 1\n");
+	fprintf(F02, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F02, "%f ", E[I][J]);
+		}
+		fprintf(F02, "\n");
+	}
+	
+	fprintf(F02, "SCALARS Constant_pressure_heat_capacity double 1\n");
+	fprintf(F02, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F02, "%f ", Cp[I][J]);
+		}
+		fprintf(F02, "\n");
+	}
+	
+	fprintf(F02, "SCALARS Adiabatic_index double 1\n");
+	fprintf(F02, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F02, "%f ", K[I][J]);
+		}
+		fprintf(F02, "\n");
+	}
+	
+	fprintf(F02, "SCALARS Temperature double 1\n");
+	fprintf(F02, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F02, "%f ", T[I][J]);
+		}
+		fprintf(F02, "\n");
+	}
+	
+	fprintf(F02, "VECTORS Velocity double\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F02, "%f %f 0.0\n", V[I][J], U[I][J]);
+		}
+	}
+
+	fclose(F02);
 
     //***************************************
     //*          Цикл по времени.           *
@@ -250,7 +327,7 @@ int main() {
 		//**********************************
 		for (I = 0; I <= N; I++) {
 			for (J = 0; J <= M; J++) {
-				// Вдоль оси "0Х".
+				// Вдоль оси "0Z".
 				A1 = (UE[I][J] + UE[I + 1][J]) / 2;
 				if (A1 >= 0) {
 					RU[I][J] = RO[I][J] * A1;
@@ -376,9 +453,9 @@ int main() {
 		} 
 
 		// Печать в VTK файлы
-		if (!(NC % 100)) {
+		if (!(NC % 10)) {
 			char vtk_filename[100];
-			snprintf(vtk_filename, sizeof(vtk_filename), "./results/out_%d.vtk", NC);
+			snprintf(vtk_filename, sizeof(vtk_filename), "/home/feelsbadkot/Desktop/results/out_%d.vtk", NC);
 			if ((F02 = fopen(vtk_filename, "w")) == NULL) {
 				printf("File %s is not open!\n", vtk_filename);
 				return 1;
