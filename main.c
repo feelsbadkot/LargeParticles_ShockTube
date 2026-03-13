@@ -1,10 +1,11 @@
-// ************************************************************* 
-// * Численное моделирование процесса течения в ударной трубе. *
-// *  Рассматривается осесимметричное течение идеального газа. *
-// * Базовая система дифференциальных уравнений: ур-ния Эйлера.*
-// *    Используется явная разностная схема метода Давыдова    *
-// *           с пересчетом "ЕЕ" по "UE" и "VE"                *
-// *************************************************************
+// ***************************************************************
+// * Численное моделирование процесса течения в ударной трубе.   *
+// *  Рассматривается осесимметричное течение идеального газа.   *
+// *  Труба заполнена двумя газами (гомогенная постановка)       *
+// * Базовая система дифференциальных уравнений: ур-ния Эйлера.  *
+// *    Используется явная разностная схема метода Давыдова      *
+// *           с пересчетом "ЕЕ" по "UE" и "VE"                  *
+// ***************************************************************
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +19,10 @@
 double **dmatrix(int nrl, int nrh, int ncl, int nch);
 void free_dmatrix(double **m, int nrl, int nrh, int ncl, int nch);
 void nrerror(char error_text[]);
+int write_data_to_vtk(char *vtk_filename, double DX, double DR, 
+					  double **U, double **V, 
+					  double **RO, double **P, double **E, 
+					  double **T, double **Cp, double **K);
 int main();
 
 int main() {
@@ -28,7 +33,6 @@ int main() {
            **RU, **RUU, **RVU, **REU, **RV, **RUV, **RVV, **REV, **RM, **RCpU, **RCpV, **RKU, **RKV,
 			A1, A2, A3, A4, A5, A6, A7, A8, A10;
   	int I, J, NC;
-  	FILE *F01, *F02;
 
     // Определение указателей на переменные.
   	RO = dmatrix(0, N_D, 0, M_D);
@@ -57,22 +61,15 @@ int main() {
 	RKV = dmatrix(0, N_D, 0, M_D);
   	RM = dmatrix(0, N_D, 0, M_D);
 
-    // Открытие файла для печати расчётной информации.
-  	if ((F01 = fopen("./OutMerc02a.txt", "w")) == NULL) {
-    	printf("File F01 is not open!\n");
-    	return 1;
-  	}
-
 	// Сообщение о начале счёта.
-  	printf("Mercury02, go,go,go!!!\n");
-  	fprintf(F01, "Mercury02, go,go,go!!!\n");
+  	printf("START\n");
 
     // Константы.
   	R0 = 1; 
 	A0 = 340; 
 	T0 = 273;
 	RO0 = 1.204;
-	DT = 4e-6 * A0 / R0; 
+	DT = 1e-6 * A0 / R0; 
 	DX = 0.005 / R0; 
 	DR = 0.005 / R0;
   	K0 = 1.4;
@@ -98,90 +95,15 @@ int main() {
 		}
   	}
 
-	// DT = DX / (8 * sqrt((K0 - 1) * E[I][J])) * A0 / R0; 
-	char vtk_filename[] = "/home/feelsbadkot/Desktop/results/out_0.vtk";
-	if ((F02 = fopen(vtk_filename, "w")) == NULL) {
-		printf("File %s is not open!\n", vtk_filename);
-		return 1;
-	}
-
-	fprintf(F02, "# vtk DataFile Version 2.0\n");
-	fprintf(F02, "2d davd\n");
-	fprintf(F02, "ASCII\n");
-	fprintf(F02, "DATASET STRUCTURED_POINTS\n");
-	fprintf(F02, "DIMENSIONS %d %d 1\n", M, N);
-	fprintf(F02, "ASPECT_RATIO %4.3f %4.3f 1\n", DX, DR);
-	fprintf(F02, "ORIGIN 0 0 0\n");
-	fprintf(F02, "POINT_DATA %d\n", N * M);
-
-	fprintf(F02, "SCALARS Density double 1\n");
-	fprintf(F02, "LOOKUP_TABLE default\n");
-	for (I = 1; I <= N; I++) {
-		for (J = 1; J <= M; J++) {
-			fprintf(F02, "%f ", RO[I][J]);
-		}
-		fprintf(F02, "\n");
-	}
-
-	fprintf(F02, "SCALARS Pressure double 1\n");
-	fprintf(F02, "LOOKUP_TABLE default\n");
-	for (I = 1; I <= N; I++) {
-		for (J = 1; J <= M; J++) {
-			fprintf(F02, "%f ", P[I][J]);
-		}
-		fprintf(F02, "\n");
-	}
-	
-	fprintf(F02, "SCALARS Energy double 1\n");
-	fprintf(F02, "LOOKUP_TABLE default\n");
-	for (I = 1; I <= N; I++) {
-		for (J = 1; J <= M; J++) {
-			fprintf(F02, "%f ", E[I][J]);
-		}
-		fprintf(F02, "\n");
-	}
-	
-	fprintf(F02, "SCALARS Constant_pressure_heat_capacity double 1\n");
-	fprintf(F02, "LOOKUP_TABLE default\n");
-	for (I = 1; I <= N; I++) {
-		for (J = 1; J <= M; J++) {
-			fprintf(F02, "%f ", Cp[I][J]);
-		}
-		fprintf(F02, "\n");
-	}
-	
-	fprintf(F02, "SCALARS Adiabatic_index double 1\n");
-	fprintf(F02, "LOOKUP_TABLE default\n");
-	for (I = 1; I <= N; I++) {
-		for (J = 1; J <= M; J++) {
-			fprintf(F02, "%f ", K[I][J]);
-		}
-		fprintf(F02, "\n");
-	}
-	
-	fprintf(F02, "SCALARS Temperature double 1\n");
-	fprintf(F02, "LOOKUP_TABLE default\n");
-	for (I = 1; I <= N; I++) {
-		for (J = 1; J <= M; J++) {
-			fprintf(F02, "%f ", T[I][J]);
-		}
-		fprintf(F02, "\n");
-	}
-	
-	fprintf(F02, "VECTORS Velocity double\n");
-	for (I = 1; I <= N; I++) {
-		for (J = 1; J <= M; J++) {
-			fprintf(F02, "%f %f 0.0\n", V[I][J], U[I][J]);
-		}
-	}
-
-	fclose(F02);
+	// Печать начальных условий 
+	char vtk_filename[] = "/home/m32a/Desktop/results/out_0.vtk";
+	write_data_to_vtk(vtk_filename, DX, DR, U, V, RO, P, E, T, Cp, K);
 
     //***************************************
     //*          Цикл по времени.           *
     //***************************************
 
-  	for (NC = 1; NC < 100000; NC++) {
+  	for (NC = 1; NC < 400000; NC++) {
 		// ГУ: правая граница.
 		for (J = 1; J <= M; J++) {
 			RO[N + 1][J] = RO[N][J]; 
@@ -295,28 +217,6 @@ int main() {
 			for (J = 1; J <= M; J++) {
 				if (P[I][J] < 0) {
 					printf("Attention!!! P[I][J]= %e %d %d %d\n", P[I][J], I, J, NC);
-					fprintf(F01, "Attention!!! P[I][J]= %e %d %d %d\n", P[I][J], I, J, NC);
-					fprintf(F01, "     Parameter PR[I][J]=\n");
-
-					for (I = 0; I <= N + 1; I++) {
-						fprintf(F01, "%3d ", I);
-						for (J=0; J <= M+1; J++) { 
-							RM[I][J] = P[I][J] * A0 * A0 * RO0 / 1E6;
-							fprintf(F01, "%8.3f", RM[I][J]);
-						}
-						fprintf(F01,"\n");
-					}
-
-					fprintf(F01,"     Parameter U1R[I][J]=\n");
-					for (I = 0; I <= N + 1; I++) {
-						fprintf(F01, "%3d ", I);
-						for (J = 0; J <= M + 1; J++) { 
-							RM[I][J] = U[I][J] * A0;
-							fprintf(F01, "%8.2f", RM[I][J]);
-						}
-						fprintf(F01, "\n");
-					
-					}
 					return 20;
 				}
 			}
@@ -414,132 +314,15 @@ int main() {
 			}
 		}
 
-		// Печать результатов расчёта.
-
-		// Печать текущая.
-		if (!(NC % 25)) {
-			A10 = A0 * A0 * RO0 / 1E6;
-			A1 = P[1][5] * A10; 
-			A2 = P[20][5] * A10;
-			A3 = P[40][5] * A10;
-			A4 = P[60][5] * A10; 
-			A5 = P[80][5] * A10; 
-			A6 = U[100][5] * A0;
-			fprintf(F01,"%5d %8.3f %8.3f %8.3f %8.3f %8.3f %8.2f\n",
-					NC, A1, A2, A3, A4, A5, A6);
-		}
-    	
-		// Печать параметров по полному полю течения.
-		if (!(NC % 100)) {
-			fprintf(F01, "Parameters of stream %d\n", NC);
-			fprintf(F01, "     Parameter PR[I][J]=\n");
-			for (I = 1; I <= N; I++) {
-				fprintf(F01, "%3d ", I);
-				for (J = 1; J <= M; J++) { 
-					RM[I][J] = P[I][J] * A0 * A0 * RO0 / 1E6;
-					fprintf(F01, "%8.3f", RM[I][J]);
-				}
-				fprintf(F01, "\n");
-			}
-			fprintf(F01, "     Parameter UR[I][J]=\n");
-			for (I = 1; I <= N; I++) {
-				fprintf(F01, "%3d ", I);
-				for (J = 1; J <= M; J++) { 
-					RM[I][J] = U[I][J] * A0;
-					fprintf(F01, "%8.2f", RM[I][J]);
-				}
-				fprintf(F01, "\n");
-			}
-		} 
-
 		// Печать в VTK файлы
 		if (!(NC % 10)) {
 			char vtk_filename[100];
-			snprintf(vtk_filename, sizeof(vtk_filename), "/home/feelsbadkot/Desktop/results/out_%d.vtk", NC);
-			if ((F02 = fopen(vtk_filename, "w")) == NULL) {
-				printf("File %s is not open!\n", vtk_filename);
-				return 1;
-			}
-
-			fprintf(F02, "# vtk DataFile Version 2.0\n");
-			fprintf(F02, "2d davd\n");
-			fprintf(F02, "ASCII\n");
-			fprintf(F02, "DATASET STRUCTURED_POINTS\n");
-			fprintf(F02, "DIMENSIONS %d %d 1\n", M, N);
-			fprintf(F02, "ASPECT_RATIO %4.3f %4.3f 1\n", DX, DR);
-			fprintf(F02, "ORIGIN 0 0 0\n");
-			fprintf(F02, "POINT_DATA %d\n", N * M);
-
-			fprintf(F02, "SCALARS Density double 1\n");
-			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (I = 1; I <= N; I++) {
-				for (J = 1; J <= M; J++) {
-					fprintf(F02, "%f ", RO[I][J]);
-				}
-				fprintf(F02, "\n");
-			}
-
-			fprintf(F02, "SCALARS Pressure double 1\n");
-			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (I = 1; I <= N; I++) {
-				for (J = 1; J <= M; J++) {
-					fprintf(F02, "%f ", P[I][J]);
-				}
-				fprintf(F02, "\n");
-			}
-
-			fprintf(F02, "SCALARS Energy double 1\n");
-			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (I = 1; I <= N; I++) {
-				for (J = 1; J <= M; J++) {
-					fprintf(F02, "%f ", E[I][J]);
-				}
-				fprintf(F02, "\n");
-			}
-
-			fprintf(F02, "SCALARS Constant_pressure_heat_capacity double 1\n");
-			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (I = 1; I <= N; I++) {
-				for (J = 1; J <= M; J++) {
-					fprintf(F02, "%f ", Cp[I][J]);
-				}
-				fprintf(F02, "\n");
-			}
-
-			fprintf(F02, "SCALARS Adiabatic_index double 1\n");
-			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (I = 1; I <= N; I++) {
-				for (J = 1; J <= M; J++) {
-					fprintf(F02, "%f ", K[I][J]);
-				}
-				fprintf(F02, "\n");
-			}
-
-			fprintf(F02, "SCALARS Temperature double 1\n");
-			fprintf(F02, "LOOKUP_TABLE default\n");
-			for (I = 1; I <= N; I++) {
-				for (J = 1; J <= M; J++) {
-					fprintf(F02, "%f ", T[I][J]);
-				}
-				fprintf(F02, "\n");
-			}
-
-			fprintf(F02, "VECTORS Velocity double\n");
-			for (I = 1; I <= N; I++) {
-				for (J = 1; J <= M; J++) {
-					fprintf(F02, "%f %f 0.0\n", V[I][J], U[I][J]);
-				}
-			}
-
-			fclose(F02);
-		}
-
-		if (NC == 10000)  {
-			fclose(F01);
-			printf("The END. Good time!\n");
-			break;
+			snprintf(vtk_filename, sizeof(vtk_filename), "/home/m32a/Desktop/results/out_%d.vtk", NC);
+			write_data_to_vtk(vtk_filename, DX, DR, U, V, RO, P, E, T, Cp, K);
 		}
   	}  // Конец цикла по времени!
+
+	printf("The END. Good time!\n");
 
     // Освобождение динамической памяти для переменных.
   	free_dmatrix(RO, 0, N_D, 0, M_D);
@@ -596,4 +379,90 @@ void nrerror(char error_text[]) {
 	fprintf(stderr, "%s\n", error_text);
 	fprintf(stderr, "...now exiting to system...\n");
 	exit(1);
+}
+
+int write_data_to_vtk(char *vtk_filename, double DX, double DR, 
+					  double **U, double **V, double **RO, double **P, 
+					  double **E, double **T, double **Cp, double **K) {
+	int I, J;
+	FILE* F0;
+
+	if ((F0 = fopen(vtk_filename, "w")) == NULL) {
+		printf("File %s is not open!\n", vtk_filename);
+		return 1;
+	}
+
+	fprintf(F0, "# vtk DataFile Version 2.0\n");
+	fprintf(F0, "2d davd\n");
+	fprintf(F0, "ASCII\n");
+	fprintf(F0, "DATASET STRUCTURED_POINTS\n");
+	fprintf(F0, "DIMENSIONS %d %d 1\n", M, N);
+	fprintf(F0, "ASPECT_RATIO %4.3f %4.3f 1\n", DX, DR);
+	fprintf(F0, "ORIGIN 0 0 0\n");
+	fprintf(F0, "POINT_DATA %d\n", N * M);
+
+	fprintf(F0, "SCALARS Density double 1\n");
+	fprintf(F0, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F0, "%f ", RO[I][J]);
+		}
+		fprintf(F0, "\n");
+	}
+
+	fprintf(F0, "SCALARS Pressure double 1\n");
+	fprintf(F0, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F0, "%f ", P[I][J]);
+		}
+		fprintf(F0, "\n");
+	}
+
+	fprintf(F0, "SCALARS Energy double 1\n");
+	fprintf(F0, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F0, "%f ", E[I][J]);
+		}
+		fprintf(F0, "\n");
+	}
+
+	fprintf(F0, "SCALARS Constant_pressure_heat_capacity double 1\n");
+	fprintf(F0, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F0, "%f ", Cp[I][J]);
+		}
+		fprintf(F0, "\n");
+	}
+
+	fprintf(F0, "SCALARS Adiabatic_index double 1\n");
+	fprintf(F0, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F0, "%f ", K[I][J]);
+			}
+		fprintf(F0, "\n");
+	}
+
+	fprintf(F0, "SCALARS Temperature double 1\n");
+	fprintf(F0, "LOOKUP_TABLE default\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F0, "%f ", T[I][J]);
+		}
+		fprintf(F0, "\n");
+	}
+
+	fprintf(F0, "VECTORS Velocity double\n");
+	for (I = 1; I <= N; I++) {
+		for (J = 1; J <= M; J++) {
+			fprintf(F0, "%f %f 0.0\n", V[I][J], U[I][J]);
+		}
+	}
+
+	fclose(F0);
+
+	return 0;
 }
